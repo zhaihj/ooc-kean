@@ -39,11 +39,12 @@ OpenGLES3Map: abstract class extends GpuMap {
 			raise("Vertex or fragment shader source not set")
 		}
 	}
-	dispose: func {
+	free: func {
 		for (i in 0..this _context getMaxContexts()) {
 			if (this _program[i] != null)
-				this _program[i] dispose()
+				this _program[i] free()
 		}
+		super()
 	}
 	use: func {
 		currentIndex := this _context getCurrentIndex()
@@ -120,9 +121,9 @@ OpenGLES3MapBgra: class extends OpenGLES3MapDefault {
 		precision highp float;\n
 		uniform sampler2D texture0;\n
 		in vec2 fragmentTextureCoordinate;
-		out vec3 outColor;\n
+		out vec4 outColor;\n
 		void main() {\n
-			outColor = texture(texture0, fragmentTextureCoordinate).rgb;\n
+			outColor = texture(texture0, fragmentTextureCoordinate).rgba;\n
 		}\n"
 }
 OpenGLES3MapMonochrome: class extends OpenGLES3MapDefault {
@@ -234,7 +235,7 @@ OpenGLES3MapYuvSemiplanarToBgra: class extends OpenGLES3MapDefault {
 		void main() {\n
 			float y = texture(texture0, fragmentTextureCoordinate).r;\n
 			vec2 uv = texture(texture1, fragmentTextureCoordinate).rg;\n
-			outColor = YuvToRgba(vec4(y, uv.g - 0.5f, uv.r - 0.5f, 1.0f));\n
+			outColor = YuvToRgba(vec4(y, uv.r - 0.5f, uv.g - 0.5f, 1.0f));\n
 		}\n"
 }
 OpenGLES3MapCalculateCoefficients: class extends OpenGLES3MapDefault {

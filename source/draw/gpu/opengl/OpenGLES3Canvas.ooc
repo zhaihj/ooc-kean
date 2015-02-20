@@ -30,8 +30,9 @@ OpenGLES3Canvas: class extends GpuCanvas {
 	init: func (image: GpuImage, context: GpuContext) {
 		super(image, context)
 	}
-	dispose: func {
-		this _renderTarget dispose()
+	free: func {
+		this _renderTarget free()
+		super()
 	}
 	onRecycle: func {
 		this _renderTarget invalidate()
@@ -41,12 +42,15 @@ OpenGLES3Canvas: class extends GpuCanvas {
 		viewport := Viewport new(this _size)
 		this draw(image, map, viewport)
 	}
+	// Postcondition: Returns the transform to apply directly to a quad for rendering with compensation for aspect ratio.
+	getFinalTransform: static func (imageSize: IntSize2D, transform: FloatTransform2D) -> FloatTransform2D {
+		toReference := FloatTransform2D createScaling(imageSize width / 2.0f, imageSize height / 2.0f)
+		toNormalized := FloatTransform2D createScaling(2.0f / imageSize width, 2.0f / imageSize height)
+		toNormalized * transform * toReference
+	}
 	draw: func ~transform2D (image: Image, transform: FloatTransform2D) {
 		map := this _context getMap(this _target, GpuMapType transform) as OpenGLES3MapDefault
-		toReference := FloatTransform2D createScaling(this _size width / 2.0f, this _size height / 2.0f)
-		toNormalized := FloatTransform2D createScaling(2.0f / this _size width, 2.0f / this _size height)
-		finalTransform := toNormalized * transform * toReference
-		map transform = finalTransform
+		map transform = getFinalTransform(this _size, transform)
 		viewport := Viewport new(this _size)
 		this draw(image, map, viewport)
 	}
@@ -125,10 +129,11 @@ OpenGLES3CanvasYuv420Planar: class extends GpuCanvas {
 	init: func (image: GpuImage, context: GpuContext) {
 		super(image, context)
 	}
-	dispose: func {
-		this _y dispose()
-		this _u dispose()
-		this _v dispose()
+	free: func {
+		this _y free()
+		this _u free()
+		this _v free()
+		super()
 	}
 	onRecycle: func {
 		this _y onRecycle()
@@ -192,16 +197,18 @@ OpenGLES3CanvasYuv420Planar: class extends GpuCanvas {
 	}
 }
 
-OpenGLES3CanvasYuv420Semiplanar: class extends OpenGLES3Canvas {
+OpenGLES3CanvasYuv420Semiplanar: class extends GpuCanvas {
 	_y: OpenGLES3Canvas
 	_uv: OpenGLES3Canvas
 
 	init: func (image: GpuImage, context: GpuContext) {
 		super(image, context)
 	}
-	dispose: func {
-		this _y dispose()
-		this _uv dispose()
+	free: func {
+		this _y free()
+		this _uv free()
+		//Works if commented
+		super()
 	}
 	onRecycle: func {
 		this _y onRecycle()

@@ -26,10 +26,11 @@ ShaderProgram: class {
 		glUseProgram(this _backend)
 		version(debugGL) { validateEnd("ShaderProgram use") }
 	}
-	dispose: func {
+	free: func {
 		version(debugGL) { validateStart() }
 		glDeleteProgram(this _backend)
 		version(debugGL) { validateEnd("ShaderProgram dispose") }
+		super()
 	}
 	setUniform: func ~Array (name: String, array: Float*, count: Int) {
 		version(debugGL) { validateStart() }
@@ -41,6 +42,11 @@ ShaderProgram: class {
 		glUniform1i(glGetUniformLocation(this _backend, name), value)
 		version(debugGL) { validateEnd("ShaderProgram setUniform~Int") }
 	}
+	setUniform: func ~IntSize2D (name: String, value: IntSize2D) {
+		version(debugGL) { validateStart() }
+		glUniform2i(glGetUniformLocation(this _backend, name), value width, value height)
+		version(debugGL) { validateEnd("ShaderProgram setUniform~FloatPoint2D") }
+	}
 	setUniform: func ~Float (name: String, value: Float) {
 		version(debugGL) { validateStart() }
 		glUniform1f(glGetUniformLocation(this _backend, name), value)
@@ -51,9 +57,19 @@ ShaderProgram: class {
 		glUniform2f(glGetUniformLocation(this _backend, name), value x, value y)
 		version(debugGL) { validateEnd("ShaderProgram setUniform~FloatPoint2D") }
 	}
+	setUniform: func ~FloatSize2D (name: String, value: FloatSize2D) {
+		version(debugGL) { validateStart() }
+		glUniform2f(glGetUniformLocation(this _backend, name), value width, value height)
+		version(debugGL) { validateEnd("ShaderProgram setUniform~SizePoint2D") }
+	}
 	setUniform: func ~FloatPoint3D (name: String, value: FloatPoint3D) {
 		version(debugGL) { validateStart() }
 		glUniform3f(glGetUniformLocation(this _backend, name), value x, value y, value z)
+		version(debugGL) { validateEnd("ShaderProgram setUniform~FloatPoint3D") }
+	}
+	setUniform: func ~FloatSize3D (name: String, value: FloatSize3D) {
+		version(debugGL) { validateStart() }
+		glUniform3f(glGetUniformLocation(this _backend, name), value width, value height, value depth)
 		version(debugGL) { validateEnd("ShaderProgram setUniform~FloatPoint3D") }
 	}
 	setUniform: func ~FloatArray (name: String, count: Int, value: Float*) {
