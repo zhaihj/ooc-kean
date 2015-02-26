@@ -39,3 +39,5 @@ rock_tmp
 
 # Test output
 /test/draw/output
+
+*.swp
