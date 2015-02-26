@@ -57,7 +57,7 @@ Texture: class {
 		this _setInternalFormats(type)
 		version(debugGL) { validateEnd("Texture init") }
 	}
-	free: override func {
+	free: func {
 		version(debugGL) { validateStart() }
 		glDeleteTextures(1, _backend&)
 		version(debugGL) { validateEnd("Texture dispose") }

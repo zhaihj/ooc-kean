@@ -111,7 +111,7 @@ OpenGLES3Canvas: class extends GpuCanvas {
 		this _renderTarget clear()
 		this _unbind()
 	}
-	readPixels: override func () -> ByteBuffer {
+	readPixels: func () -> ByteBuffer {
 		this _renderTarget readPixels()
 	}
 	create: static func (image: GpuPacked, context: GpuContext) -> This {

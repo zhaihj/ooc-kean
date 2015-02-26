@@ -48,7 +48,7 @@ OpenGLES3Context: class extends GpuContext {
 	init: func ~unshared { this init(Context create()) }
 	init: func ~shared (other: This) { this init(Context create(other _backend)) }
 	init: func ~window (nativeWindow: NativeWindow) { this init(Context create(nativeWindow)) }
-	free: override func {
+	free: func {
 		this _backend makeCurrent()
 		this _bgrMapDefault free()
 		this _bgraMapDefault free()
