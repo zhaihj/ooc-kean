@@ -38,9 +38,9 @@ RasterBgr: class extends RasterPacked {
 	apply: func ~bgr (action: Func(ColorBgr)) {
 		end := this buffer pointer + this buffer size
 		rowLength := this size width
-		for (row in this buffer pointer..end) {
-			rowEnd := (row as ColorBgr*) + rowLength
-			for (source in (row as ColorBgr*)..rowEnd) {
+		for (row in this buffer pointer as SSizeT..end as SSizeT) {
+			rowEnd := row + rowLength
+			for (source in row..rowEnd) {
 				action((source as ColorBgr*)@)
 				source += 2
 			}
@@ -113,6 +113,7 @@ RasterBgr: class extends RasterPacked {
 		x, y, n: Int
 		requiredComponents := 3
 		data := StbImage load(filename, x&, y&, n&, requiredComponents)
+        if(!data){ Exception new(StbImage failureReason() toString()) throw() }
 		result := This new(IntSize2D new(x, y))
 		memcpy(result buffer pointer, data, x * y * requiredComponents)
 		// FIXME: Find a better way to do this using Dispose() or something

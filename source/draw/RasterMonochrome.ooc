@@ -44,10 +44,10 @@ RasterMonochrome: class extends RasterPacked {
 	apply: func ~monochrome (action: Func(ColorMonochrome)) {
 		end := this buffer pointer + this buffer size
 		rowLength := this size width
-		for (row in this buffer pointer..end) {
+		for (row: SSizeT in this buffer pointer as SSizeT..end as SSizeT) {
 //			"RasterMonochrome apply ~monochrome, end of line at #{row}" println()
 			rowEnd := row + rowLength
-			for (source in row..rowEnd)
+			for (source:SSizeT in row..rowEnd)
 				action((source as ColorMonochrome*)@)
 			row += this stride - 1
 		}
@@ -94,8 +94,9 @@ RasterMonochrome: class extends RasterPacked {
 //	}
 	open: static func (filename: String) -> This {
 		x, y, n: Int
-		requiredComponents := 1
-		data := StbImage load(filename, x&, y&, n&, requiredComponents)
+		requiredComponents := 1 
+        data := StbImage load(filename toCString(), x&, y&, n&, requiredComponents)
+        if(!data){ Exception new(StbImage failureReason() toString()) throw() }
 		buffer := ByteBuffer new(x * y * requiredComponents)
 		// FIXME: Find a better way to do this using Dispose() or something
 		memcpy(buffer pointer, data, x * y * requiredComponents)
@@ -107,24 +108,22 @@ RasterMonochrome: class extends RasterPacked {
 	}
 	convertFrom: static func(original: RasterImage) -> This {
 		result := This new(original)
-		//		"RasterMonochrome init ~fromRasterImage, original: (#{original size}), this: (#{this size}), stride #{this stride}" println()
 		row := result buffer pointer as UInt8*
 		rowLength := result stride
 		rowEnd := row + rowLength
 		destination := row
 		f := func (color: ColorMonochrome) {
 			(destination as ColorMonochrome*)@ = color
-			//			"RasterMonochrome init ~fromRasterImage f, color: #{color y}, destination at #{destination}" println()
 			destination += 1
 			if (destination >= rowEnd) {
-				//				"RasterMonochrome init ~fromRasterImage f, end of line at #{destination}" println()
 				row += result stride
 				destination = row
-				//				"RasterMonochrome init ~fromRasterImage f, new line at #{destination}" println()
 				rowEnd = row + rowLength
 			}
 		}
 		original apply(f)
+
+        result
 	}
 
 	operator [] (x, y: Int) -> ColorMonochrome {
