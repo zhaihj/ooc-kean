@@ -20,6 +20,7 @@ use ooc-math
 use ooc-base
 import GpuPacker, GpuPackerBin, AndroidTexture, GraphicBuffer
 import threading/Thread
+import math
 AndroidContext: class extends OpenGLES3Context {
 	_packerBin: GpuPackerBin
 	_packMonochrome1080p: OpenGLES3MapPackMonochrome1080p
@@ -28,6 +29,7 @@ AndroidContext: class extends OpenGLES3Context {
 	_unpackUv1080p: OpenGLES3MapUnpackUv1080p
 	_unpackRgbaToMonochrome: OpenGLES3MapUnpackRgbaToMonochrome
 	_unpackRgbaToUv: OpenGLES3MapUnpackRgbaToUv
+	_unpaddedWidth: static Int[]
 	init: func {
 		super()
 		this _initialize()
@@ -45,7 +47,7 @@ AndroidContext: class extends OpenGLES3Context {
 		this _unpackRgbaToMonochrome = OpenGLES3MapUnpackRgbaToMonochrome new(this)
 		this _unpackRgbaToUv = OpenGLES3MapUnpackRgbaToUv new(this)
 	}
-	free: func {
+	free: override func {
 		this _backend makeCurrent()
 		this _packerBin free()
 		this _packMonochrome free()
@@ -57,21 +59,7 @@ AndroidContext: class extends OpenGLES3Context {
 	}
 	toRaster: func ~Yuv420SpOverwrite (gpuImage: GpuYuv420Semiplanar, rasterImage: RasterYuv420Semiplanar) {
 		yPacker, uvPacker: GpuPacker
-		/*
-		//Special case to deal with padding for 1080p
-		if (gpuImage size height == 1080) {
-			yPacker = this createPacker(IntSize2D new(1920, 270), 4)
-			uvPacker = this createPacker(IntSize2D new(1920, 135), 4)
-			yPacker pack(gpuImage y, this _packMonochrome1080p)
-			uvPacker pack(gpuImage uv, this _packUv1080p)
-		}
-		else {
-			yPacker = this createPacker(gpuImage y size, 1)
-			uvPacker = this createPacker(gpuImage uv size, 2)
-			yPacker pack(gpuImage y, this _packMonochrome)
-			uvPacker pack(gpuImage uv, this _packUv)
-		}
-		*/
+
 		yPacker = this createPacker(gpuImage y size, 1)
 		uvPacker = this createPacker(gpuImage uv size, 2)
 		this _packMonochrome imageWidth = gpuImage y size width
@@ -89,7 +77,7 @@ AndroidContext: class extends OpenGLES3Context {
 		yPacker recycle()
 		uvPacker recycle()
 	}
-	toRaster: func ~overwrite (gpuImage: GpuImage, rasterImage: RasterImage) {
+	toRaster: override func ~overwrite (gpuImage: GpuImage, rasterImage: RasterImage) {
 		match(gpuImage) {
 			case (i : GpuYuv420Semiplanar) => this toRaster(gpuImage as GpuYuv420Semiplanar, rasterImage as RasterYuv420Semiplanar)
 			case => raise("Using toRaster on unimplemented image format")
@@ -97,20 +85,6 @@ AndroidContext: class extends OpenGLES3Context {
 	}
 	toRaster: func ~Yuv420Sp (gpuImage: GpuYuv420Semiplanar) -> RasterImage {
 		yPacker, uvPacker: GpuPacker
-		/*
-		if (gpuImage size height == 1080) {
-			yPacker = this createPacker(IntSize2D new(1920, 270), 4)
-			uvPacker = this createPacker(IntSize2D new(1920, 135), 4)
-			yPacker pack(gpuImage y, this _packMonochrome1080p)
-			uvPacker pack(gpuImage uv, this _packUv1080p)
-		}
-		else {
-			yPacker = this createPacker(gpuImage y size, 1)
-			uvPacker = this createPacker(gpuImage uv size, 2)
-			yPacker pack(gpuImage y, this _packMonochrome)
-			uvPacker pack(gpuImage uv, this _packUv)
-		}
-		*/
 
 		yPacker = this createPacker(gpuImage y size, 1)
 		uvPacker = this createPacker(gpuImage uv size, 2)
@@ -137,14 +111,20 @@ AndroidContext: class extends OpenGLES3Context {
 		result
 	}
 	toRaster: func ~monochrome (gpuImage: GpuMonochrome) -> RasterImage {
-		yPacker := this createPacker(gpuImage size, 1)
-		this _packMonochrome imageWidth = gpuImage size width
-		yPacker pack(gpuImage, this _packMonochrome)
-		buffer := yPacker read()
-		result := RasterMonochrome new(buffer, gpuImage size, 64)
+		result: RasterImage
+		if (!this isAligned(gpuImage size width)) {
+			result = super(gpuImage)
+		}
+		else {
+			yPacker := this createPacker(gpuImage size, 1)
+			this _packMonochrome imageWidth = gpuImage size width
+			yPacker pack(gpuImage, this _packMonochrome)
+			buffer := yPacker read()
+			result = RasterMonochrome new(buffer, gpuImage size, 64)
+		}
 		result
 	}
-	toRaster: func (gpuImage: GpuImage) -> RasterImage {
+	toRaster: override func (gpuImage: GpuImage) -> RasterImage {
 		result := match(gpuImage) {
 			case (i : GpuYuv420Semiplanar) => this toRaster(gpuImage as GpuYuv420Semiplanar)
 			case (i : GpuMonochrome) => this toRaster(gpuImage as GpuMonochrome)
@@ -152,9 +132,7 @@ AndroidContext: class extends OpenGLES3Context {
 		}
 		result
 	}
-	recycle: func ~GpuPacker (packer: GpuPacker) {
-		this _packerBin add(packer)
-	}
+	recycle: func ~GpuPacker (packer: GpuPacker) { this _packerBin add(packer) }
 	createPacker: func (size: IntSize2D, bytesPerPixel: UInt) -> GpuPacker {
 		result := this _packerBin find(size, bytesPerPixel)
 		if (result == null) {
@@ -164,13 +142,12 @@ AndroidContext: class extends OpenGLES3Context {
 		result
 	}
 	createAndroidRgba: func (size: IntSize2D, read: Bool, write: Bool) -> AndroidRgba { AndroidRgba new(size, read, write, this _backend _eglDisplay) }
-	createBgra: func ~fromGpuTexture (texture: GpuTexture) -> OpenGLES3Bgra { OpenGLES3Bgra new(texture, this) }
 	createBgra: func ~fromGraphicBuffer (buffer: GraphicBuffer) -> OpenGLES3Bgra {
-		androidTexture := this createAndroidRgba(buffer)
-		result := this createBgra(androidTexture)
+		androidTexture := AndroidRgba new(buffer, this _backend _eglDisplay)
+		result := OpenGLES3Bgra new(androidTexture, this)
+		result _recyclable = false
 		result
 	}
-	createAndroidRgba: func ~fromGraphicBuffer (buffer: GraphicBuffer) -> AndroidRgba { AndroidRgba new(buffer, this _backend _eglDisplay) }
 	unpackBgraToYuv420Semiplanar: func (source: GpuBgra, targetSize: IntSize2D) -> GpuYuv420Semiplanar {
 		target := this createYuv420Semiplanar(targetSize) as GpuYuv420Semiplanar
 		this _unpackRgbaToMonochrome targetSize = target y size
@@ -182,14 +159,53 @@ AndroidContext: class extends OpenGLES3Context {
 		target
 	}
 
+	alignWidth: func (width: Int, align := AlignWidth Nearest) -> Int {
+		result := 0
+		match(align) {
+			case AlignWidth Nearest => {
+				for (i in 0..This _unpaddedWidth length) {
+					currentWidth := This _unpaddedWidth[i]
+					if (abs(result - width) > abs(currentWidth - width))
+						result = currentWidth
+				}
+			}
+			case AlignWidth Floor => {
+				for (i in 0..This _unpaddedWidth length) {
+					currentWidth := This _unpaddedWidth[i]
+					if (abs(result - width) > abs(currentWidth - width) && currentWidth <= width)
+						result = currentWidth
+				}
+			}
+			case AlignWidth Ceiling => {
+				for (i in 0..This _unpaddedWidth length) {
+					currentWidth := This _unpaddedWidth[i]
+					if (abs(result - width) > abs(currentWidth - width) && currentWidth >= width)
+						result = currentWidth
+				}
+			}
+		}
+		result
+	}
+	isAligned: func (width: Int) -> Bool {
+		result := false
+		for (i in 0..This _unpaddedWidth length) {
+			if (width == This _unpaddedWidth[i]) {
+				result = true
+				break
+			}
+		}
+		result
+	}
+
 }
 
 AndroidContextManager: class extends GpuContextManager {
 	_motherContext: AndroidContext
 	_sharedContexts: Bool
 	_mutex: Mutex
-	currentAndroidContext: AndroidContext { get { this _getContext() as AndroidContext } }
-	init: func (contexts: Int, sharedContexts := false) {
+	currentContext: AndroidContext { get { this _getContext() as AndroidContext } }
+	init: func (contexts: Int, unpaddedWidth: Int[], sharedContexts := false) {
+		AndroidContext _unpaddedWidth = unpaddedWidth
 		super(contexts)
 		this _sharedContexts = sharedContexts
 		this _mutex = Mutex new()
@@ -211,6 +227,10 @@ AndroidContextManager: class extends GpuContextManager {
 
 		result
 	}
-	createBgra: func ~fromGraphicBuffer (buffer: GraphicBuffer) -> OpenGLES3Bgra { this currentAndroidContext createBgra(buffer) }
-	unpackBgraToYuv420Semiplanar: func (source: GpuBgra, targetSize: IntSize2D) -> GpuYuv420Semiplanar { this currentAndroidContext unpackBgraToYuv420Semiplanar(source, targetSize) }
+	createBgra: func ~fromGraphicBuffer (buffer: GraphicBuffer) -> OpenGLES3Bgra { this currentContext createBgra(buffer) }
+	unpackBgraToYuv420Semiplanar: func (source: GpuBgra, targetSize: IntSize2D) -> GpuYuv420Semiplanar {
+		this currentContext unpackBgraToYuv420Semiplanar(source, targetSize)
+	}
+	alignWidth: func (width: Int, align := AlignWidth Nearest) -> Int { this currentContext alignWidth(width, align) }
+	isAligned: func (width: Int) -> Bool { this currentContext isAligned(width) }
 }

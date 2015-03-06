@@ -57,7 +57,7 @@ Texture: class {
 		this _setInternalFormats(type)
 		version(debugGL) { validateEnd("Texture init") }
 	}
-	free: func {
+	free: override func {
 		version(debugGL) { validateStart() }
 		glDeleteTextures(1, _backend&)
 		version(debugGL) { validateEnd("Texture dispose") }
@@ -173,7 +173,6 @@ Texture: class {
 		true
 	}
 	_allocate: func (pixels: Pointer, stride: Int) {
-		DebugPrint print("Allocating OpenGL texture")
 		pixelStride := stride / this _bytesPerPixel
 		if (pixelStride != this width) {
 			glPixelStorei(GL_UNPACK_ROW_LENGTH, pixelStride)

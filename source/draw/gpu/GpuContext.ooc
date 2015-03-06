@@ -16,6 +16,13 @@
 use ooc-math
 use ooc-draw
 import GpuImage, GpuMonochrome, GpuUv, GpuBgr, GpuBgra, GpuYuv420Semiplanar, GpuYuv420Planar, GpuYuv422Semipacked, GpuImageBin, GpuSurfaceBin, GpuSurface, GpuMap, Viewport
+
+AlignWidth: enum {
+	Nearest
+	Floor
+	Ceiling
+}
+
 GpuContext: abstract class {
 	_imageBin: GpuImageBin
 	_surfaceBin: GpuSurfaceBin
@@ -23,7 +30,7 @@ GpuContext: abstract class {
 		this _imageBin = GpuImageBin new()
 		this _surfaceBin = GpuSurfaceBin new()
 	}
-	free: func {
+	free: override func {
 		this _imageBin free()
 		this _surfaceBin free()
 		super()
@@ -34,6 +41,7 @@ GpuContext: abstract class {
 	createBgra: abstract func (size: IntSize2D) -> GpuBgra
 	createUv: abstract func (size: IntSize2D) -> GpuUv
 	createYuv420Semiplanar: abstract func (size: IntSize2D) -> GpuYuv420Semiplanar
+	createYuv420Semiplanar: abstract func ~fromImages (y: GpuMonochrome, uv: GpuUv) -> GpuYuv420Semiplanar
 	createYuv420Planar: abstract func (size: IntSize2D) -> GpuYuv420Planar
 	createYuv422Semipacked: abstract func (size: IntSize2D) -> GpuYuv422Semipacked
 	createGpuImage: abstract func (rasterImage: RasterImage) -> GpuImage
@@ -41,10 +49,12 @@ GpuContext: abstract class {
 	recycle: abstract func ~image (gpuImage: GpuImage)
 	recycle: abstract func ~surface (surface: GpuSurface)
 	createSurface: abstract func -> GpuSurface
-	toRaster: func (gpuImage: GpuImage) -> RasterImage { gpuImage toRasterDefault() }
-	toRaster: func ~overwrite (gpuImage: GpuImage, rasterImage: RasterImage) { gpuImage toRasterDefault(rasterImage) }
+	toRaster: virtual func (gpuImage: GpuImage) -> RasterImage { gpuImage toRasterDefault() }
+	toRaster: virtual func ~overwrite (gpuImage: GpuImage, rasterImage: RasterImage) { gpuImage toRasterDefault(rasterImage) }
 	getMap: abstract func (gpuImage: GpuImage, mapType := GpuMapType defaultmap) -> GpuMap
 	getMaxContexts: func -> Int { 1 }
 	setViewport: abstract func (viewport: Viewport)
 	getCurrentIndex: func -> Int { 0 }
+	alignWidth: func (width: Int, align := AlignWidth Nearest) -> Int { width }
+	isAligned: func (width: Int) -> Bool { true }
 }
