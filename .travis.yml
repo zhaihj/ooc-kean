@@ -2,10 +2,11 @@ before_script:
   - sudo apt-get -y -qq install libgc-dev 
   - sudo apt-get -y -qq install libgles2-mesa-dev
   - sudo apt-get -y -qq install wget
-  - tmp="$(wget -O - https://github.com/cogneco/rock/releases/latest | grep -o '\<download/rock_.*deb\>')" 
-  - wget https://github.com/cogneco/rock/releases/$tmp
-  - sudo dpkg --install ${tmp##*/}
-  - ls /usr/include
+  - mkdir tools
+  - cd tools && git clone https://github.com/zhaihj/rock
+  - cd rock && make rescue
+  - make clean self
+  - cd ../..
   - export PATH=$PATH:$PWD/tools/rock/bin:$PWD/tools/sam
   - mkdir tools
   - export OOC_LIBS=$PWD/..
