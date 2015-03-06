@@ -25,7 +25,7 @@ GpuPacked: abstract class extends GpuImage {
 		super(size, channels, context)
 		this _recyclable = true
 	}
-	free: override func {
+	free: func {
 		if (this recyclable)
 			this recycle()
 		else {

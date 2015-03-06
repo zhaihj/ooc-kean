@@ -43,7 +43,7 @@ GpuPacker: class {
 		this _renderTarget = Fbo create(this _targetTexture backend, this _internalSize width, this _internalSize height)
 	}
 	recycle: func { this _context recycle(this) }
-	free: override func {
+	free: func {
 		this _targetTexture free()
 		this _renderTarget free()
 		super()

@@ -30,7 +30,7 @@ OpenGLES3Canvas: class extends GpuCanvas {
 	init: func (image: GpuImage, context: GpuContext) {
 		super(image, context)
 	}
-	free: override func {
+	free: func {
 		this _renderTarget free()
 		super()
 	}
@@ -86,17 +86,17 @@ OpenGLES3Canvas: class extends GpuCanvas {
 		this _unbind()
 	}
 	// TODO: Clean these 3 functions up...
-	drawLines: override func (pointList: VectorList<FloatPoint2D>) {
+	drawLines: func (pointList: VectorList<FloatPoint2D>) {
 		drawLinesFunc := func (surface: OpenGLES3Surface, transform: FloatTransform2D) { surface drawLines(pointList, transform) }
 		this drawSurface(drawLinesFunc)
 		(drawLinesFunc as Closure) dispose()
 	}
-	drawBox: override func (box: FloatBox2D) {
+	drawBox: func (box: FloatBox2D) {
 		drawBoxFunc := func (surface: OpenGLES3Surface, transform: FloatTransform2D) { surface drawBox(box, transform) }
 		this drawSurface(drawBoxFunc)
 		(drawBoxFunc as Closure) dispose()
 	}
-	drawPoints: override func (pointList: VectorList<FloatPoint2D>) {
+	drawPoints: func (pointList: VectorList<FloatPoint2D>) {
 		drawPointsFunc := func (surface: OpenGLES3Surface, transform: FloatTransform2D) { surface drawPoints(pointList, transform) }
 		this drawSurface(drawPointsFunc)
 		(drawPointsFunc as Closure) dispose()
@@ -116,7 +116,7 @@ OpenGLES3Canvas: class extends GpuCanvas {
 		this _renderTarget clear()
 		this _unbind()
 	}
-	readPixels: override func () -> ByteBuffer {
+	readPixels: func () -> ByteBuffer {
 		this _renderTarget readPixels()
 	}
 	create: static func (image: GpuPacked, context: GpuContext) -> This {

@@ -39,7 +39,7 @@ OpenGLES3Map: abstract class extends GpuMap {
 			raise("Vertex or fragment shader source not set")
 		}
 	}
-	free: override func {
+	free: func {
 		for (i in 0..this _context getMaxContexts()) {
 			if (this _program[i] != null)
 				this _program[i] free()

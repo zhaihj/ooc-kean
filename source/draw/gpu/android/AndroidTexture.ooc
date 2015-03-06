@@ -28,7 +28,7 @@ AndroidTexture: abstract class extends GpuTexture {
 	init: func (size: IntSize2D, =_buffer, eglImage: EGLImage, =_channels) {
 		super(eglImage, size)
 	}
-	free: override func {
+	free: func {
 		this backend free()
 		this _buffer free()
 	}

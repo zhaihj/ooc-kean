@@ -14,7 +14,7 @@ Object: abstract class {
     /// Finalizer: cleans up any objects belonging to this instance
     __destroy__: func {}
 
-    free: virtual func {
+    free: func {
       version(!gc) {
         this __destroy__()
         gc_free(this)
