@@ -66,8 +66,10 @@ GpuImageBin: class {
 				this _uv add(i)
 			case (i: GpuYuv422Semipacked) =>
 				this _yuv422 add(i)
+			case (i: GpuYuv420Semiplanar) =>
+				this _yuv422 add(i)
 			case =>
-				raise("Unknown format in GpuImageBin add()")
+				raise("Unknown format (%s) in GpuImageBin add()" format(image class name))
 		}
 		this _mutex unlock()
 	}
