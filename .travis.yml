@@ -2,12 +2,12 @@ before_script:
   - sudo apt-get -y -qq install libgc-dev 
   - sudo apt-get -y -qq install libgles2-mesa-dev
   - sudo apt-get -y -qq install wget
+  - export PATH=$PATH:$PWD/tools/rock/bin:$PWD/tools/sam
   - mkdir tools
   - cd tools && git clone https://github.com/zhaihj/rock
   - cd rock && make rescue
   - make clean self
   - cd ../..
-  - export PATH=$PATH:$PWD/tools/rock/bin:$PWD/tools/sam
   - mkdir tools
   - export OOC_LIBS=$PWD/..
   - # otherwise, PWD/sdk.use will be used instead of PWD/tools/rock/sdk.use and rock will fail to compile.
